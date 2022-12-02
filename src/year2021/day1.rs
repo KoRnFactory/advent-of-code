@@ -29,7 +29,7 @@ fn by_line() {
 }
 
 fn by_window() {
-    let file = File::open("./src/aoc/day1/input.txt").unwrap();
+    let file = File::open("./src/year2021/day1.input.txt").unwrap();
     let buffer = io::BufReader::new(file);
     let lines = buffer.lines();
 

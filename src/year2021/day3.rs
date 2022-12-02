@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-pub(crate) fn solve() {
-    let file = File::open("./src/day3/input.txt").unwrap();
+pub fn solve() {
+    let file = File::open("./src/year2021/day3.input.txt").unwrap();
     let buffer = BufReader::new(file);
     let lines = buffer
         .lines()
