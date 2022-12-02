@@ -1,7 +1,7 @@
 pub fn solve() {
-    let lines = include_str!("day1.input.txt");
+    let input = include_str!("day1.input.txt");
 
-    let elves = lines.split("\n\n");
+    let elves = input.split("\n\n");
 
     let mut best_elves: Vec<u32> = elves.map(|line| line.split("\n").flat_map(|cals| cals.parse::<u32>()).sum()).collect();
 
