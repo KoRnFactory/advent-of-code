@@ -1,7 +1,3 @@
-use itertools::Itertools;
-
-const BASE: &str = "abcdefg";
-
 pub fn solve() {
     let input = include_str!("day8.input.txt");
 
@@ -28,28 +24,29 @@ fn part2(input: &str) -> u32 {
     input
         .lines()
         .map(|line| {
-            let (ten, four) = line.split_once(" | ").unwrap();
-            let tens = ten.split(" ").collect::<Vec<&str>>();
+            let (_, four) = line.split_once(" | ").unwrap();
             let fours = four.split(" ").collect::<Vec<&str>>();
 
-            let all_blocks = tens
-                .iter()
-                .chain(fours.iter())
-                .map(|&number| number)
-                .collect::<Vec<&str>>();
+            let meanings = find_all_meanings(line);
 
-            let seed = find_seed(&all_blocks).unwrap();
-
-            let meanings = fours
+            return fours
                 .iter()
-                .map(|&number| find_meaning(number, &seed).unwrap())
-                .collect::<Vec<u32>>();
-
-            return meanings
-                .iter()
+                .map(|&block| {
+                    meanings
+                        .iter()
+                        .enumerate()
+                        .find(|(_, &meaning)| {
+                            meaning.len() == block.len()
+                                && meaning
+                                    .chars()
+                                    .all(|meaning_char| block.contains(meaning_char))
+                        })
+                        .unwrap()
+                        .0
+                })
                 .enumerate()
                 .map(|(position, digit)| {
-                    digit * 10u32.pow((meanings.len() as u32 - 1u32) - position as u32)
+                    digit as u32 * 10u32.pow((fours.len() as u32 - 1u32) - position as u32)
                 })
                 .sum::<u32>();
         })
@@ -66,74 +63,68 @@ fn get_sure_value(input: &str) -> Option<&str> {
     }
 }
 
-fn find_seed(numbers: &Vec<&str>) -> Option<String> {
-    for seed_vec in BASE.chars().permutations(BASE.len()).unique() {
-        let seed = seed_vec.iter().collect::<String>();
+fn find_all_meanings(line: &str) -> Vec<&str> {
+    let (ten, four) = line.split_once(" | ").unwrap();
+    let tens = ten.split(" ").collect::<Vec<&str>>();
+    let fours = four.split(" ").collect::<Vec<&str>>();
 
-        if numbers
-            .iter()
-            .all(|&number| find_meaning(number, &seed).is_some())
-        {
-            return Some(seed.to_string());
-        }
-    }
-
-    return None;
-}
-
-fn generate_seed(seed: &String) -> Vec<String> {
-    (0..10 as usize)
-        .map(|x| generate_number(x, seed.as_str()).to_owned())
-        .collect::<Vec<String>>()
-}
-
-fn generate_number(number: usize, seed: &str) -> String {
-    let seed_chars = seed.chars().collect::<Vec<char>>();
-
-    let mut numbers: Vec<char> = vec![];
-
-    let positions: Vec<usize> = match number {
-        0 => vec![0, 1, 2, 4, 5, 6],
-        1 => vec![2, 5],
-        2 => vec![0, 2, 3, 4, 6],
-        3 => vec![0, 2, 3, 5, 6],
-        4 => vec![1, 2, 3, 5],
-        5 => vec![0, 1, 3, 5, 6],
-        6 => vec![0, 1, 3, 4, 5, 6],
-        7 => vec![0, 2, 5],
-        8 => vec![0, 1, 2, 3, 4, 5, 6],
-        9 => vec![0, 1, 2, 3, 5, 6],
-        _ => vec![],
-    };
-
-    for x in positions {
-        numbers.push(seed_chars[x]);
-    }
-
-    return numbers.iter().collect();
-}
-
-fn find_meaning(search: &str, seed: &str) -> Option<u32> {
-    let seed_numbers = generate_seed(&seed.to_string());
-
-    let item = seed_numbers
+    let all_blocks = tens
         .iter()
-        .map(|number| number.as_str())
-        .enumerate()
-        .filter(|(_, number)| number.len() == search.len())
-        .find(|(_, seed_number)| {
-            let result = seed_number
-                .chars()
-                .all(|seed_char| search.contains(seed_char))
-                && search
-                    .chars()
-                    .all(|search_char| seed_number.contains(search_char));
+        .chain(fours.iter())
+        .map(|&number| number)
+        .collect::<Vec<&str>>();
 
-            return result;
-        });
+    let mut meanings = vec![""; 10];
 
-    match item {
-        None => None,
-        Some((index, _)) => Some(index as u32),
+    meanings[1] = all_blocks.iter().find(|block| block.len() == 2).unwrap();
+    meanings[4] = all_blocks.iter().find(|block| block.len() == 4).unwrap();
+    meanings[7] = all_blocks.iter().find(|block| block.len() == 3).unwrap();
+    meanings[8] = all_blocks.iter().find(|block| block.len() == 7).unwrap();
+
+    let fourdiff = meanings[4]
+        .chars()
+        .filter(|&char| !(meanings[7].contains(char)))
+        .collect::<Vec<char>>();
+
+    let five_lenghts = all_blocks
+        .iter()
+        .filter(|&&meaning| meaning.len() == 5)
+        .map(|&meaning| {
+            let index: usize = if meanings[1].chars().all(|char| meaning.contains(char)) {
+                3
+            } else if fourdiff.iter().all(|&char| meaning.contains(char)) {
+                5
+            } else {
+                2
+            };
+
+            (index, meaning)
+        })
+        .collect::<Vec<(usize, &str)>>();
+
+    for (index, meaning) in five_lenghts {
+        meanings[index] = meaning
     }
+
+    let six_lenghts = all_blocks
+        .iter()
+        .filter(|&&meaning| meaning.len() == 6)
+        .map(|meaning| {
+            let index: usize = if meanings[4].chars().all(|char| meaning.contains(char)) {
+                9
+            } else if fourdiff.iter().all(|&char| meaning.contains(char)) {
+                6
+            } else {
+                0
+            };
+
+            (index, *meaning)
+        })
+        .collect::<Vec<(usize, &str)>>();
+
+    for (index, meaning) in six_lenghts {
+        meanings[index] = meaning
+    }
+
+    return meanings;
 }
