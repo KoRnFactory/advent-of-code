@@ -1,5 +1,5 @@
-mod year2021;
+mod year2022;
 
 fn main() {
-    year2021::day8::solve();
+    year2022::day7::solve();
 }
